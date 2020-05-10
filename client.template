@@ -1,0 +1,12 @@
+[Interface]
+Address = ${CLIENT_ADDRESS}
+PrivateKey = ${CLIENT_PRIVATE_KEY}
+ListenPort = ${CLIENT_PORT}
+DNS = ${CLIENT_DNS}
+
+[Peer]
+PublicKey = ${SERVER_PUBLIC_KEY}
+Endpoint = ${SERVER_ENDPOINT}:${SERVER_PORT}
+AllowedIPs = ${CLIENT_ALLOWED_IPS}
+
+PersistentKeepalive = 25
