@@ -5,7 +5,7 @@ client_root () {
   client_template_filename='./client.template'
 
   client_prompt_server_filename () {
-    server_config_filename_selections=(./*.conf "Other")
+    server_config_filename_selections=(./*.conf  "Other")
 
     tell "Which server config will this client connect to?"
       for i in "${!server_config_filename_selections[@]}"; do
@@ -155,24 +155,95 @@ client_root () {
     case ${answer,,} in
       1 )
         display_qr
-        root
       ;;
       2 )
         display_qr
         echo "$result" > $client_config_filename
-        root
       ;;
       3 )
         echo "$result" > $client_config_filename
-        root
       ;;
       *)
         client_prompt_variables
       ;;
     esac
 
+    tell "Do you want to add this client to $server_config_filename?"
+      option 1 "Yes"
+      option 2 "No"
+    input answer
 
+    case ${answer,,} in
+      1 )
+        client_prompt_gen_server_config_template_filename
+      ;;
+      *)
+        root
+      ;;
+    esac
+  }
 
+  client_prompt_gen_server_config_template_filename () {
+    client_server_config_template_filename_selections=(./*.template "Other")
+
+    tell "Which server config client template should I use?"
+    for i in "${!client_server_config_template_filename_selections[@]}"; do
+      option "$(expr $i + 1)" "${client_server_config_template_filename_selections[$i]}"
+    done
+    input answer
+
+    case ${answer,,} in
+      "${#client_server_config_template_filename_selections[@]}"|custom )
+        input client_server_config_template_filename "Enter filename:"
+      ;;
+      *)
+        if [ "${answer,,}" -lt "${#client_server_config_template_filename_selections[@]}" ]
+          then client_server_config_template_filename="${client_server_config_template_filename_selections[$(expr ${answer,,} - 1)]}"
+          else ${FUNCNAME[0]}
+        fi
+      ;;
+    esac
+
+    client_prompt_gen_server_config
+  }
+
+  client_prompt_gen_server_config () {
+    CLIENT_PUBLIC_KEY=$(echo $CLIENT_PRIVATE_KEY | wg pubkey)
+
+    variables=(
+      CLIENT_ADDRESS
+      CLIENT_PUBLIC_KEY
+    )
+    args=""
+    args_display=""
+
+    for i in "${variables[@]}"
+      do
+         args="$args $i=\"${!i}\""
+         args_display="$args_display $i=\"${PPL}${!i}${OFF}\""
+    done
+
+    cmd="$args perl -pe 's/\\\$\{([^\}]+)}/\$ENV{\$1}/g' $client_server_config_template_filename"
+    result="$(env -i bash -c "$cmd")"
+
+    cmd_display="$args_display perl -pe 's/\\\$\{([^\}]+)}/\$ENV{\$1}/g' $client_server_config_template_filename"
+    result_display="$(env -i bash -c "$cmd_display")"
+
+    echo -e "\n$result_display"
+
+    tell "Would you like to append this to $server_config_filename?"
+      option 1 "Yes"
+      option 2 "No"
+    input answer
+
+    case ${answer,,} in
+      1 )
+        echo -e "$result" >> "\n$server_config_filename"
+        tell "Written"
+      ;;
+    esac
+
+    root
   }
 
   client_prompt_server_filename

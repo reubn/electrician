@@ -33,7 +33,7 @@ ask () {
   then
     echo ""
   fi
-  echo -en "${BLD}$2${OFF}: ${BLD}"; read $1; echo -en ${OFF}
+  echo -en "${BLD}$2${OFF}(${!1}): ${BLD}"; read $1; echo -en ${OFF}
 }
 
 option () {

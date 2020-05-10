@@ -3,7 +3,7 @@ server_root () {
   server_prompt_config_filename () {
     server_config_filename_selections=(./*.conf "./server-$(random).conf" "Other")
 
-    tell "Where should I save this serverconfig? (duplicates will be overriden)"
+    tell "Where should I save this server config? (duplicates will be overriden)"
       for i in "${!server_config_filename_selections[@]}"; do
         option "$(expr $i + 1)" "${server_config_filename_selections[$i]}"
       done
@@ -112,6 +112,9 @@ server_root () {
 
     cmd_display="$args_display perl -pe 's/\\\$\{([^\}]+)}/\$ENV{\$1}/g' $server_template_filename"
     result_display="$(env -i bash -c "$cmd_display")"
+
+    result="${result}\n# Electrician-ServerEndpoint: ${SERVER_ENDPOINT}"
+    result_display="${result_display}\n# Electrician-ServerEndpoint: ${CYN}${SERVER_ENDPOINT}${OFF}"
 
     echo -e "\n$result_display"
 
