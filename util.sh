@@ -20,6 +20,15 @@ random () {
   cat /dev/urandom | env LC_CTYPE=C tr -dc 'a-zA-Z0-9' | fold -w ${1:-6} | head -n 1
 }
 
+colourTerms () {
+  client="${1//client/${BLU}client${OFF}}"
+  echo "${client//server/${YLW}server${OFF}}"
+}
+
+_UNSAFE_stripLastOctect () {
+  echo "$1" | perl -pe 's/\.\d+$/\./g'
+}
+
 tell () {
   if [ -z ${2+x} ]
   then
@@ -29,11 +38,9 @@ tell () {
 }
 
 ask () {
-  if [ -z ${3+x} ]
-  then
-    echo ""
-  fi
-  echo -en "${BLD}$2${OFF}(${!1}): ${BLD}"; read $1; echo -en ${OFF}
+  default="${3}"
+
+  echo -en "${BLD}$2${OFF}: ${BLD}"; read -e -i " $default" $1; echo -en ${OFF}
 }
 
 option () {
@@ -41,16 +48,8 @@ option () {
 }
 
 input () {
-  echo ""
-  echo -en "${IND}${2:-"Enter choice:"} ${BLD}"; read $1; echo -en ${OFF}
-}
+  default="${2}"
 
-awk_replace='{
-    while (match($0, /\${[^}]+}/)) {
-        search = substr($0, RSTART + 1, RLENGTH - 2)
-        $0 = substr($0, 1, RSTART - 1)   \
-             ENVIRON[search]             \
-             substr($0, RSTART + RLENGTH)
-    }
-    print
-}'
+  echo ""
+  echo -en "${IND}${3:-"Enter choice:"} ${BLD}"; read -e -i " $default" $1; echo -en ${OFF}
+}

@@ -5,17 +5,30 @@ client_root () {
   client_template_filename='./client.template'
 
   client_prompt_server_filename () {
-    server_config_filename_selections=(./*.conf  "Other")
+    server_config_filename_selections_raw=()
+    shopt -s nullglob
+    for location in "${WG_SERVER_CONFIG_LOCATIONS[@]}"; do
+      for file in $location; do
+        server_config_filename_selections_raw+=( "$file" )
+      done
+    done
 
-    tell "Which server config will this client connect to?"
+    server_config_filename_selections=()
+    for file in "$(printf "%s\n" "${server_config_filename_selections_raw[@]}" | sort -u)"; do
+      server_config_filename_selections+=( $file )
+    done
+
+    server_config_filename_selections+=( "Other" )
+
+    tell "📝  Which ${YLW}server${OFF} config will this ${BLU}client${OFF} connect to?"
       for i in "${!server_config_filename_selections[@]}"; do
-        option "$(expr $i + 1)" "${server_config_filename_selections[$i]}"
+        option "$(expr $i + 1)" "$(colourTerms "${server_config_filename_selections[$i]}")"
       done
     input answer
 
     case ${answer,,} in
       "${#server_config_filename_selections[@]}"|custom )
-        input server_config_filename "Enter filename:"
+        input server_config_filename "Enter path:"
       ;;
       *)
         if [ "${answer,,}" -lt "${#server_config_filename_selections[@]}" ]
@@ -25,20 +38,45 @@ client_root () {
       ;;
     esac
 
+    SERVER_ADDRESS=$(grep -Po 'Address\s?=\s?\K(.+)' $server_config_filename)
+    SERVER_PORT=$(grep -Po 'ListenPort\s?=\s?\K(.+)' $server_config_filename)
+    SERVER_ENDPOINT=$(grep -Po '#\s?Electrician-ServerEndpoint:\s?\K(.+)' $server_config_filename)
+    SERVER_PRIVATE_KEY=$(grep -Po 'PrivateKey\s?=\s?\K(.+)' $server_config_filename)
+
+    SERVER_PUBLIC_KEY=$(echo $SERVER_PRIVATE_KEY | wg pubkey)
+
+
     client_prompt_config_filename
   }
 
   client_prompt_config_filename () {
-    client_config_filename_selections=(./*.conf "./client-$(random).conf" "Other")
-    tell "Where should I save this client config? (duplicates will be overriden)"
-      for i in "${!client_config_filename_selections[@]}"; do
-        option "$(expr $i + 1)" "${client_config_filename_selections[$i]}"
+    client_config_filename_selections_raw=()
+    shopt -s nullglob
+    for location in "${WG_CLIENT_CONFIG_LOCATIONS[@]}"; do
+      for file in $location; do
+        client_config_filename_selections_raw+=( "$file" )
       done
+    done
+
+    client_config_filename_selections=()
+    for file in "$(printf "%s\n" "${client_config_filename_selections_raw[@]}" | sort -u)"; do
+      client_config_filename_selections+=( $file )
+    done
+
+    client_config_filename_selections+=( "Other" )
+
+    tell "📝  Where should I save this ${BLU}client${OFF} config?"
+      for i in "${!client_config_filename_selections[@]}"; do
+        option "$(expr $i + 1)" "$(colourTerms "${client_config_filename_selections[$i]}")"
+      done
+
+    tell "⚠️  File will be overriden!"
+
     input answer
 
     case ${answer,,} in
       "${#client_config_filename_selections[@]}"|custom )
-        input client_config_filename "Enter filename:"
+        input client_config_filename "Enter path:"
       ;;
       *)
         if [ "${answer,,}" -lt "${#client_config_filename_selections[@]}" ]
@@ -52,17 +90,30 @@ client_root () {
   }
 
   client_prompt_template_filename () {
-    client_template_filename_selections=(./*.template "Other")
+    client_template_filename_selections_raw=()
+    shopt -s nullglob
+    for location in "${WG_CLIENT_TEMPLATE_LOCATIONS[@]}"; do
+      for file in $location; do
+        client_template_filename_selections_raw+=( "$file" )
+      done
+    done
 
-    tell "Which client template should I use?"
+    client_template_filename_selections=()
+    for file in "$(printf "%s\n" "${client_template_filename_selections_raw[@]}" | sort -u)"; do
+      client_template_filename_selections+=( $file )
+    done
+
+    client_template_filename_selections+=( "Other" )
+
+    tell "📄  Which ${BLU}client${OFF} template should I use?"
     for i in "${!client_template_filename_selections[@]}"; do
-      option "$(expr $i + 1)" "${client_template_filename_selections[$i]}"
+      option "$(expr $i + 1)" "$(colourTerms "${client_template_filename_selections[$i]}")"
     done
     input answer
 
     case ${answer,,} in
       "${#client_template_filename_selections[@]}"|custom )
-        input client_template_filename "Enter filename:"
+        input client_template_filename "Enter path:"
       ;;
       *)
         if [ "${answer,,}" -lt "${#client_template_filename_selections[@]}" ]
@@ -76,15 +127,15 @@ client_root () {
   }
 
   client_prompt_variables () {
-    ask CLIENT_ADDRESS "What's the clients's IP address?"
-    ask CLIENT_PORT "What port should the server listen on?" false
-    ask CLIENT_DNS "What DNS server should this client use?" false
-    ask CLIENT_ALLOWED_IPS "What IP address ranges should this client tunnel?" false
+    ask CLIENT_ADDRESS "🔢  What's the ${BLU}client's${OFF} WireGuard IP address?" "$(_UNSAFE_stripLastOctect $SERVER_ADDRESS)"
+    ask CLIENT_PORT "💯  What port will the ${BLU}client${OFF} listen on?"
+    ask CLIENT_DNS "🌍  What DNS server should this ${BLU}client${OFF} use?" "$SERVER_ADDRESS"
+    ask CLIENT_ALLOWED_IPS "🔢  What IP address ranges should this ${BLU}client${OFF} tunnel?" "0.0.0.0, ::/0"
 
     client_prompt_variables_private_key () {
-      tell "Do you already have a private key to use?" false
-        option 1 "No - generate one for me"
-        option 2 "Yes"
+      tell "🔐  Do you already have a ${BLU}client${OFF} private key to use?" false
+        option 1 "❌  No - hook me up"
+        option 2 "✅  Yes"
       input answer
 
       case ${answer,,} in
@@ -106,15 +157,6 @@ client_root () {
   }
 
   client_prompt_gen_config () {
-    server_config=$(cat $server_config_filename)
-
-    SERVER_ADDRESS=$(grep -Po 'Address\s?=\s?\K(.+)' $server_config_filename)
-    SERVER_PORT=$(grep -Po 'ListenPort\s?=\s?\K(.+)' $server_config_filename)
-    SERVER_ENDPOINT=$(grep -Po '#\s?Electrician-ServerEndpoint:\s?\K(.+)' $server_config_filename)
-    SERVER_PRIVATE_KEY=$(grep -Po 'PrivateKey\s?=\s?\K(.+)' $server_config_filename)
-
-    SERVER_PUBLIC_KEY=$(echo $SERVER_PRIVATE_KEY | wg pubkey)
-
     variables=(
       CLIENT_ADDRESS
       CLIENT_PRIVATE_KEY
@@ -146,10 +188,10 @@ client_root () {
       qrencode -t ansiutf8 "$result"
     }
 
-    tell "What would you like to do with the client config?"
-      option 1 "Show QR code"
-      option 2 "Show QR code and save to $client_config_filename"
-      option 3 "Only save to $client_config_filename"
+    tell "📝  What would you like to do with the ${BLU}client${OFF} config?"
+      option 1 "🔳     Show QR code"
+      option 2 "🔳  💾  Show QR code and save to $client_config_filename"
+      option 3 "💾     Only save to $client_config_filename"
     input answer
 
     case ${answer,,} in
@@ -168,9 +210,9 @@ client_root () {
       ;;
     esac
 
-    tell "Do you want to add this client to $server_config_filename?"
-      option 1 "Yes"
-      option 2 "No"
+    tell "📝  Do you want to add this ${BLU}client${OFF} to $server_config_filename?"
+      option 1 "✅  Yes"
+      option 2 "❌  No"
     input answer
 
     case ${answer,,} in
@@ -184,17 +226,30 @@ client_root () {
   }
 
   client_prompt_gen_server_config_template_filename () {
-    client_server_config_template_filename_selections=(./*.template "Other")
+    client_server_config_template_filename_selections_raw=()
+    shopt -s nullglob
+    for location in "${WG_CLIENT_SEVER_TEMPLATE_LOCATIONS[@]}"; do
+      for file in $location; do
+        client_server_config_template_filename_selections_raw+=( "$file" )
+      done
+    done
 
-    tell "Which server config client template should I use?"
+    client_server_config_template_filename_selections=()
+    for file in "$(printf "%s\n" "${client_server_config_template_filename_selections_raw[@]}" | sort -u)"; do
+      client_server_config_template_filename_selections+=( $file )
+    done
+
+    client_server_config_template_filename_selections+=( "Other" )
+
+    tell "📄  Which ${BLU}client${OFF} ${YLW}server${OFF} template should I use?"
     for i in "${!client_server_config_template_filename_selections[@]}"; do
-      option "$(expr $i + 1)" "${client_server_config_template_filename_selections[$i]}"
+      option "$(expr $i + 1)" "$(colourTerms "${client_server_config_template_filename_selections[$i]}")"
     done
     input answer
 
     case ${answer,,} in
       "${#client_server_config_template_filename_selections[@]}"|custom )
-        input client_server_config_template_filename "Enter filename:"
+        input client_server_config_template_filename "Enter path:"
       ;;
       *)
         if [ "${answer,,}" -lt "${#client_server_config_template_filename_selections[@]}" ]
@@ -231,15 +286,15 @@ client_root () {
 
     echo -e "\n$result_display"
 
-    tell "Would you like to append this to $server_config_filename?"
-      option 1 "Yes"
-      option 2 "No"
+    tell "💾  Would you like to append this to $server_config_filename?"
+      option 1 "✅  Yes"
+      option 2 "❌  No"
     input answer
 
     case ${answer,,} in
       1 )
-        echo -e "$result" >> "\n$server_config_filename"
-        tell "Written"
+        echo -e "\n$result" >> "$server_config_filename"
+        tell "👌  Done"
       ;;
     esac
 

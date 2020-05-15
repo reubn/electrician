@@ -1,18 +1,33 @@
 server_root () {
 
   server_prompt_config_filename () {
-    server_config_filename_selections=(./*.conf "./server-$(random).conf" "Other")
-
-    tell "Where should I save this server config? (duplicates will be overriden)"
-      for i in "${!server_config_filename_selections[@]}"; do
-        option "$(expr $i + 1)" "${server_config_filename_selections[$i]}"
+    server_config_filename_selections_raw=()
+    shopt -s nullglob
+    for location in "${WG_SERVER_CONFIG_LOCATIONS[@]}"; do
+      for file in $location; do
+        server_config_filename_selections_raw+=( "$file" )
       done
+    done
+
+    server_config_filename_selections=()
+    for file in "$(printf "%s\n" "${server_config_filename_selections_raw[@]}" | sort -u)"; do
+      server_config_filename_selections+=( $file )
+    done
+
+    server_config_filename_selections+=( "Other" )
+
+    tell "📝  Where should I save this ${YLW}server${OFF} config?"
+      for i in "${!server_config_filename_selections[@]}"; do
+        option "$(expr $i + 1)" "$(colourTerms "${server_config_filename_selections[$i]}")"
+      done
+
+    tell "⚠️  File will be overriden!"
 
     input answer
 
     case ${answer,,} in
       "${#server_config_filename_selections[@]}"|custom )
-        input server_config_filename "Enter filename:"
+        input server_config_filename "./" "Enter path:"
       ;;
       *)
         if [ "${answer,,}" -lt "${#server_config_filename_selections[@]}" ]
@@ -26,17 +41,30 @@ server_root () {
   }
 
   server_prompt_template_filename () {
-    server_template_filename_selections=(./*.template "Other")
+    server_template_filename_selections_raw=()
+    shopt -s nullglob
+    for location in "${WG_SERVER_TEMPLATE_LOCATIONS[@]}"; do
+      for file in $location; do
+        server_template_filename_selections_raw+=( "$file" )
+      done
+    done
 
-    tell "Which server template should I use?"
+    server_template_filename_selections=()
+    for file in "$(printf "%s\n" "${server_template_filename_selections_raw[@]}" | sort -u)"; do
+      server_template_filename_selections+=( $file )
+    done
+
+    server_template_filename_selections+=( "Other" )
+
+    tell "📄  Which ${YLW}server${OFF} template should I use?"
     for i in "${!server_template_filename_selections[@]}"; do
-      option "$(expr $i + 1)" "${server_template_filename_selections[$i]}"
+      option "$(expr $i + 1)" "$(colourTerms "${server_template_filename_selections[$i]}")"
     done
     input answer
 
     case ${answer,,} in
       "${#server_template_filename_selections[@]}"|custom )
-        input server_template_filename "Enter filename:"
+        input server_template_filename "Enter path:"
       ;;
       *)
         if [ "${answer,,}" -lt "${#server_template_filename_selections[@]}" ]
@@ -50,14 +78,14 @@ server_root () {
   }
 
   server_prompt_variables () {
-    ask SERVER_ADDRESS "What's the server's IP address?"
-    ask SERVER_PORT "What port should the server listen on?" false
-    ask SERVER_ENDPOINT "What address will the server be accessible at?" false
+    ask SERVER_ADDRESS "🔢  What's the ${YLW}server's${OFF} WireGuard IP address?"
+    ask SERVER_PORT "💯  What port should the ${YLW}server${OFF} listen on?"
+    ask SERVER_ENDPOINT "🔗  What address will the ${YLW}server${OFF} be accessible at?"
 
     server_prompt_variables_private_key () {
-      tell "Do you already have a server private key to use?" false
-        option 1 "No - generate one for me"
-        option 2 "Yes"
+      tell "🔐  Do you already have a private key you want to use on the ${YLW}server${OFF}?" false
+        option 1 "❌  No - hook me up"
+        option 2 "✅  Yes"
       input answer
 
       case ${answer,,} in
@@ -118,15 +146,15 @@ server_root () {
 
     echo -e "\n$result_display"
 
-    tell "Would you like to write this to $server_config_filename?"
-      option 1 "Yes"
-      option 2 "No"
+    tell "📝  Would you like to write this to $server_config_filename?"
+      option 1 "✅  Yes"
+      option 2 "❌  No"
     input answer
 
     case ${answer,,} in
       1 )
         echo -e "$result" > $server_config_filename
-        tell "Written"
+        tell "👌  Done"
 
         root
       ;;

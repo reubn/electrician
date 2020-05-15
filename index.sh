@@ -2,17 +2,20 @@
 
 SCRIPT_VERSION="0.0.1"
 
+SERVER_ADDRESS=server.address
+
 . ./util.sh
+. ./conf.sh
 . ./server.sh
 . ./client.sh
 
-echo -e "${PPL}electrician v${SCRIPT_VERSION} - WireGuard Manager${OFF}"
+echo -e "⚡️  ${PPL}electrician v${SCRIPT_VERSION} - WireGuard Manager${OFF}"
 
 root () {
   tell "What can I help you with?"
-    option 1 "Add New Server Config"
-    option 2 "Add New Client Config"
-    option 3 "Exit"
+    option 1 "🗄  Add New ${YLW}Server${OFF} Config"
+    option 2 "👩‍  Add New ${BLU}Client${OFF} Config"
+    option 3 "🚪  Exit"
   input answer
 
   case ${answer,,} in
