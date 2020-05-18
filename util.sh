@@ -26,7 +26,10 @@ colourTerms () {
 }
 
 _UNSAFE_stripLastOctect () {
-  echo "$1" | perl -pe 's/\.\d+$/\./g'
+  echo "$1" | perl -pe 's/\.(\d+)(\/\d+)?$/\./g'
+}
+_UNSAFE_stripCIDR () {
+  echo "$1" | perl -pe 's/\/\d+$//g'
 }
 
 tell () {

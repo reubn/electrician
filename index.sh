@@ -1,6 +1,6 @@
 #/bin/bash
 
-SCRIPT_VERSION="0.0.1"
+SCRIPT_VERSION="0.0.5"
 
 SERVER_ADDRESS=server.address
 

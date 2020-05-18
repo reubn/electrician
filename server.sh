@@ -1,41 +1,30 @@
 server_root () {
 
-  server_prompt_config_filename () {
-    server_config_filename_selections_raw=()
-    shopt -s nullglob
-    for location in "${WG_SERVER_CONFIG_LOCATIONS[@]}"; do
-      for file in $location; do
-        server_config_filename_selections_raw+=( "$file" )
-      done
-    done
+  server_prompt_variables () {
+    ask SERVER_ADDRESS "🔢  What's the ${YLW}server's${OFF} WireGuard IP address?" 
+    ask SERVER_PORT "💯  What port should the ${YLW}server${OFF} listen on?" "51820"
+    ask SERVER_ENDPOINT "🔗  What address will the ${YLW}server${OFF} be accessible at?"
 
-    server_config_filename_selections=()
-    for file in "$(printf "%s\n" "${server_config_filename_selections_raw[@]}" | sort -u)"; do
-      server_config_filename_selections+=( $file )
-    done
+    server_prompt_variables_private_key () {
+      tell "🔐  Do you already have a private key you want to use on the ${YLW}server${OFF}?" false
+        option 1 "❌  No - hook me up"
+        option 2 "✅  Yes"
+      input answer
 
-    server_config_filename_selections+=( "Other" )
+      case ${answer,,} in
+        1|n )
+          SERVER_PRIVATE_KEY=$(wg genkey)
+        ;;
+        2|y )
+          ask SERVER_PRIVATE_KEY "Enter your private key"
+        ;;
+        *)
+          ${FUNCNAME[0]}
+        ;;
+      esac
+    }
 
-    tell "📝  Where should I save this ${YLW}server${OFF} config?"
-      for i in "${!server_config_filename_selections[@]}"; do
-        option "$(expr $i + 1)" "$(colourTerms "${server_config_filename_selections[$i]}")"
-      done
-
-    tell "⚠️  File will be overriden!"
-
-    input answer
-
-    case ${answer,,} in
-      "${#server_config_filename_selections[@]}"|custom )
-        input server_config_filename "./" "Enter path:"
-      ;;
-      *)
-        if [ "${answer,,}" -lt "${#server_config_filename_selections[@]}" ]
-          then server_config_filename="${server_config_filename_selections[$(expr ${answer,,} - 1)]}"
-          else ${FUNCNAME[0]}
-        fi
-      ;;
-    esac
+    server_prompt_variables_private_key
 
     server_prompt_template_filename
   }
@@ -74,34 +63,45 @@ server_root () {
       ;;
     esac
 
-    server_prompt_variables
+    server_prompt_config_filename
   }
 
-  server_prompt_variables () {
-    ask SERVER_ADDRESS "🔢  What's the ${YLW}server's${OFF} WireGuard IP address?"
-    ask SERVER_PORT "💯  What port should the ${YLW}server${OFF} listen on?"
-    ask SERVER_ENDPOINT "🔗  What address will the ${YLW}server${OFF} be accessible at?"
+  server_prompt_config_filename () {
+    server_config_filename_selections_raw=()
+    shopt -s nullglob
+    for location in "${WG_SERVER_CONFIG_LOCATIONS[@]}"; do
+      for file in $location; do
+        server_config_filename_selections_raw+=( "$file" )
+      done
+    done
 
-    server_prompt_variables_private_key () {
-      tell "🔐  Do you already have a private key you want to use on the ${YLW}server${OFF}?" false
-        option 1 "❌  No - hook me up"
-        option 2 "✅  Yes"
-      input answer
+    server_config_filename_selections=()
+    for file in "$(printf "%s\n" "${server_config_filename_selections_raw[@]}" | sort -u)"; do
+      server_config_filename_selections+=( $file )
+    done
 
-      case ${answer,,} in
-        1|n )
-          SERVER_PRIVATE_KEY=$(wg genkey)
-        ;;
-        2|y )
-          ask SERVER_PRIVATE_KEY "Enter your private key"
-        ;;
-        *)
-          ${FUNCNAME[0]}
-        ;;
-      esac
-    }
+    server_config_filename_selections+=( "Other" )
 
-    server_prompt_variables_private_key
+    tell "📝  Where should I save this ${YLW}server${OFF} config?"
+      for i in "${!server_config_filename_selections[@]}"; do
+        option "$(expr $i + 1)" "$(colourTerms "${server_config_filename_selections[$i]}")"
+      done
+
+    tell "⚠️  File will be overriden!"
+
+    input answer
+
+    case ${answer,,} in
+      "${#server_config_filename_selections[@]}"|custom )
+        input server_config_filename "./" "Enter path:"
+      ;;
+      *)
+        if [ "${answer,,}" -lt "${#server_config_filename_selections[@]}" ]
+          then server_config_filename="${server_config_filename_selections[$(expr ${answer,,} - 1)]}"
+          else ${FUNCNAME[0]}
+        fi
+      ;;
+    esac
 
     server_prompt_write_config
   }
@@ -164,6 +164,7 @@ server_root () {
     esac
   }
 
-  server_prompt_config_filename
+
+  server_prompt_variables
 
 }

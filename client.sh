@@ -46,45 +46,35 @@ client_root () {
     SERVER_PUBLIC_KEY=$(echo $SERVER_PRIVATE_KEY | wg pubkey)
 
 
-    client_prompt_config_filename
+    client_prompt_variables
   }
 
-  client_prompt_config_filename () {
-    client_config_filename_selections_raw=()
-    shopt -s nullglob
-    for location in "${WG_CLIENT_CONFIG_LOCATIONS[@]}"; do
-      for file in $location; do
-        client_config_filename_selections_raw+=( "$file" )
-      done
-    done
+  client_prompt_variables () {
+    ask CLIENT_ADDRESS "🔢  What's the ${BLU}client's${OFF} WireGuard IP address?" "$(_UNSAFE_stripLastOctect $SERVER_ADDRESS)"
+    # ask CLIENT_PORT "💯  What port will the ${BLU}client${OFF} listen on?"
+    ask CLIENT_DNS "🌍  What DNS server should this ${BLU}client${OFF} use?" "$(_UNSAFE_stripCIDR $SERVER_ADDRESS)"
+    ask CLIENT_ALLOWED_IPS "🔢  What IP address ranges should this ${BLU}client${OFF} tunnel?" "0.0.0.0, ::/0"
 
-    client_config_filename_selections=()
-    for file in "$(printf "%s\n" "${client_config_filename_selections_raw[@]}" | sort -u)"; do
-      client_config_filename_selections+=( $file )
-    done
+    client_prompt_variables_private_key () {
+      tell "🔐  Do you already have a ${BLU}client${OFF} private key to use?" false
+        option 1 "❌  No - hook me up"
+        option 2 "✅  Yes"
+      input answer
 
-    client_config_filename_selections+=( "Other" )
+      case ${answer,,} in
+        1|n )
+          CLIENT_PRIVATE_KEY=$(wg genkey)
+        ;;
+        2|y )
+          ask CLIENT_PRIVATE_KEY "Enter your private key"
+        ;;
+        *)
+          ${FUNCNAME[0]}
+        ;;
+      esac
+    }
 
-    tell "📝  Where should I save this ${BLU}client${OFF} config?"
-      for i in "${!client_config_filename_selections[@]}"; do
-        option "$(expr $i + 1)" "$(colourTerms "${client_config_filename_selections[$i]}")"
-      done
-
-    tell "⚠️  File will be overriden!"
-
-    input answer
-
-    case ${answer,,} in
-      "${#client_config_filename_selections[@]}"|custom )
-        input client_config_filename "Enter path:"
-      ;;
-      *)
-        if [ "${answer,,}" -lt "${#client_config_filename_selections[@]}" ]
-          then client_config_filename="${client_config_filename_selections[$(expr ${answer,,} - 1)]}"
-          else ${FUNCNAME[0]}
-        fi
-      ;;
-    esac
+    client_prompt_variables_private_key
 
     client_prompt_template_filename
   }
@@ -123,36 +113,6 @@ client_root () {
       ;;
     esac
 
-    client_prompt_variables
-  }
-
-  client_prompt_variables () {
-    ask CLIENT_ADDRESS "🔢  What's the ${BLU}client's${OFF} WireGuard IP address?" "$(_UNSAFE_stripLastOctect $SERVER_ADDRESS)"
-    ask CLIENT_PORT "💯  What port will the ${BLU}client${OFF} listen on?"
-    ask CLIENT_DNS "🌍  What DNS server should this ${BLU}client${OFF} use?" "$SERVER_ADDRESS"
-    ask CLIENT_ALLOWED_IPS "🔢  What IP address ranges should this ${BLU}client${OFF} tunnel?" "0.0.0.0, ::/0"
-
-    client_prompt_variables_private_key () {
-      tell "🔐  Do you already have a ${BLU}client${OFF} private key to use?" false
-        option 1 "❌  No - hook me up"
-        option 2 "✅  Yes"
-      input answer
-
-      case ${answer,,} in
-        1|n )
-          CLIENT_PRIVATE_KEY=$(wg genkey)
-        ;;
-        2|y )
-          ask CLIENT_PRIVATE_KEY "Enter your private key"
-        ;;
-        *)
-          ${FUNCNAME[0]}
-        ;;
-      esac
-    }
-
-    client_prompt_variables_private_key
-
     client_prompt_gen_config
   }
 
@@ -190,8 +150,8 @@ client_root () {
 
     tell "📝  What would you like to do with the ${BLU}client${OFF} config?"
       option 1 "🔳     Show QR code"
-      option 2 "🔳  💾  Show QR code and save to $client_config_filename"
-      option 3 "💾     Only save to $client_config_filename"
+      option 2 "🔳  💾  Show QR code and Save"
+      option 3 "💾     Save Only"
     input answer
 
     case ${answer,,} in
@@ -199,14 +159,16 @@ client_root () {
         display_qr
       ;;
       2 )
+        client_prompt_config_filename
         display_qr
         echo "$result" > $client_config_filename
       ;;
       3 )
+        client_prompt_config_filename
         echo "$result" > $client_config_filename
       ;;
       *)
-        client_prompt_variables
+        ${FUNCNAME[0]}
       ;;
     esac
 
@@ -221,6 +183,44 @@ client_root () {
       ;;
       *)
         root
+      ;;
+    esac
+  }
+
+  client_prompt_config_filename () {
+    client_config_filename_selections_raw=()
+    shopt -s nullglob
+    for location in "${WG_CLIENT_CONFIG_LOCATIONS[@]}"; do
+      for file in $location; do
+        client_config_filename_selections_raw+=( "$file" )
+      done
+    done
+
+    client_config_filename_selections=()
+    for file in "$(printf "%s\n" "${client_config_filename_selections_raw[@]}" | sort -u)"; do
+      client_config_filename_selections+=( $file )
+    done
+
+    client_config_filename_selections+=( "Other" )
+
+    tell "📝  Where should I save this ${BLU}client${OFF} config?"
+      for i in "${!client_config_filename_selections[@]}"; do
+        option "$(expr $i + 1)" "$(colourTerms "${client_config_filename_selections[$i]}")"
+      done
+
+    tell "⚠️  File will be overriden!"
+
+    input answer
+
+    case ${answer,,} in
+      "${#client_config_filename_selections[@]}"|custom )
+        input client_config_filename "Enter path:"
+      ;;
+      *)
+        if [ "${answer,,}" -lt "${#client_config_filename_selections[@]}" ]
+          then client_config_filename="${client_config_filename_selections[$(expr ${answer,,} - 1)]}"
+          else ${FUNCNAME[0]}
+        fi
       ;;
     esac
   }
