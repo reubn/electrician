@@ -1,3 +1,3 @@
 [Peer]
 PublicKey = ${CLIENT_PUBLIC_KEY}
-AllowedIPs = ${CLIENT_ADDRESS}
+AllowedIPs = ${CLIENT_ADDRESS}/32

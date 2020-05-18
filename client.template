@@ -1,7 +1,6 @@
 [Interface]
-Address = ${CLIENT_ADDRESS}
+Address = ${CLIENT_ADDRESS}/32
 PrivateKey = ${CLIENT_PRIVATE_KEY}
-ListenPort = ${CLIENT_PORT}
 DNS = ${CLIENT_DNS}
 
 [Peer]
