@@ -21,8 +21,6 @@ reload_root () {
         option "$(expr $i + 1)" "$(colourTerms "${reload_config_path_selections[$i]}")"
       done
 
-    tell "🛎  ${YLW}Server${OFF} config files can only be reloaded from WireGuard config directories!"
-
     input answer
 
     case ${answer,,} in
@@ -57,8 +55,19 @@ reload_root () {
 
     case ${answer,,} in
       1 )
-        sudo wg-quick down $reload_config_interface
-        sudo wg-quick up $reload_config_interface
+        # WireGuard will override config file when taking interface down - wiping changes
+        reload_config_path_tmp="$reload_config_path.electriciantmp"
+
+        sudo touch $reload_config_path_tmp
+        sudo cp $reload_config_path $reload_config_path_tmp
+
+        sudo wg-quick down $reload_config_path
+
+        sudo cp $reload_config_path_tmp $reload_config_path
+
+        sudo wg-quick up $reload_config_path
+
+        sudo rm $reload_config_path_tmp
 
         tell "👌  Done"
       ;;
