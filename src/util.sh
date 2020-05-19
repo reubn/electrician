@@ -43,7 +43,7 @@ tell () {
 ask () {
   default="${3}"
 
-  echo -en "${BLD}$2${OFF}: ${BLD}"; read -e -i " $default" $1; echo -en ${OFF}
+  echo -en "${BLD}$2${OFF}: ${BLD}"; read -e -i "  $default" $1; echo -en ${OFF}
 }
 
 option () {
@@ -54,5 +54,5 @@ input () {
   default="${2}"
 
   echo ""
-  echo -en "${IND}${3:-"Enter choice:"} ${BLD}"; read -e -i " $default" $1; echo -en ${OFF}
+  echo -en "${IND}${OFF}${3:-"Enter choice:"} ${BLD}"; read -e -i "  $default" $1; echo -en ${OFF}
 }
