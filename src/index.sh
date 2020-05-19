@@ -1,6 +1,6 @@
 #/bin/bash
 
-SCRIPT_VERSION="0.0.7"
+SCRIPT_VERSION="0.0.8"
 
 . ./util.sh
 . ./conf.sh
@@ -8,7 +8,11 @@ SCRIPT_VERSION="0.0.7"
 . ./client.sh
 . ./reload.sh
 
-echo -e "⚡️  ${PPL}electrician v${SCRIPT_VERSION} - WireGuard Manager${OFF}"
+if [[ $EUID -ne 0 ]]; then
+   tell "❌  ${RED}This script must be run as root!${OFF}" false
+   exit 1
+fi
+
 
 root () {
   tell "What can I help you with?"
