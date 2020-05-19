@@ -1,9 +1,9 @@
 server_root () {
 
   server_prompt_variables () {
-    ask SERVER_ADDRESS "🔢  What's the ${YLW}server's${OFF} WireGuard IP address?" 
-    ask SERVER_PORT "💯  What port should the ${YLW}server${OFF} listen on?" "51820"
-    ask SERVER_ENDPOINT "🔗  What address will the ${YLW}server${OFF} be accessible at?"
+    ask SERVER_ADDRESS "🔢  What's the ${YLW}server's${OFF} WireGuard IP address?" SERVER_ADDRESS
+    ask SERVER_PORT "💯  What port should the ${YLW}server${OFF} listen on?" "51820" SERVER_PORT
+    ask SERVER_ENDPOINT "🔗  What address will the ${YLW}server${OFF} be accessible at?" SERVER_ENDPOINT
 
     server_prompt_variables_private_key () {
       tell "🔐  Do you already have a private key you want to use on the ${YLW}server${OFF}?" false
@@ -107,24 +107,6 @@ server_root () {
   }
 
   server_prompt_write_config () {
-    # variables=(SERVER_ADDRESS SERVER_PORT SERVER_PRIVATE_KEY)
-    # sed_args=""
-    # sed_args_display=""
-    #
-    # for i in "${variables[@]}"
-    #   do
-    #      sed_args="$sed_args -e s|\${$i}|${!i}|"
-    #      sed_args_display="$sed_args_display -e s|\${$i}|$(escape_color $PPL)${!i}$(escape_color $OFF)|"
-    #   done
-    #
-    # result=$(sed $sed_args $server_template_filename)
-    # result_display=$(sed $sed_args_display $server_template_filename)
-    #
-    # result="${result}\n# Electrician-ServerEndpoint: ${SERVER_ENDPOINT}"
-    # result_display="${result_display}\n# Electrician-ServerEndpoint: ${PPL}${SERVER_ENDPOINT}${OFF}"
-    #
-    # echo -e "\n$result_display"
-
     variables=(SERVER_ADDRESS SERVER_PORT SERVER_PRIVATE_KEY)
     args=""
     args_display=""

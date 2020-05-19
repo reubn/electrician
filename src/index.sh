@@ -2,8 +2,6 @@
 
 SCRIPT_VERSION="0.0.5"
 
-SERVER_ADDRESS=server.address
-
 . ./util.sh
 . ./conf.sh
 . ./server.sh
