@@ -13,6 +13,7 @@ if [[ $EUID -ne 0 ]]; then
    exit 1
 fi
 
+tell "⚡️  ${PPL}electrician v${SCRIPT_VERSION} - WireGuard Manager${OFF}" false
 
 root () {
   tell "What can I help you with?"
