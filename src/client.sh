@@ -48,7 +48,7 @@ client_root () {
     ask CLIENT_ADDRESS "🔢  What's the ${BLU}client's${OFF} WireGuard IP address?" "$(_UNSAFE_stripLastOctect $SERVER_ADDRESS)"
     # ask CLIENT_PORT "💯  What port will the ${BLU}client${OFF} listen on?"
     ask CLIENT_DNS "🌍  What DNS server should this ${BLU}client${OFF} use?" "$(_UNSAFE_stripCIDR $SERVER_ADDRESS)"
-    ask CLIENT_ALLOWED_IPS "🔢  What IP address ranges should this ${BLU}client${OFF} tunnel?" "0.0.0.0, ::/0"
+    ask CLIENT_ALLOWED_IPS "🔢  What IP address ranges should this ${BLU}client${OFF} tunnel?" "0.0.0.0/0, ::/0"
 
     client_prompt_variables_private_key () {
       tell "🔐  Do you already have a ${BLU}client${OFF} private key to use?" false
